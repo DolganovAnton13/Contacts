@@ -21,6 +21,12 @@ public interface ContactDao {
     @Query("SELECT * FROM Contact WHERE id = :id")
     LiveData<Contact> getContactById(String id);
 
+    @Query("SELECT id, name, phone, height FROM Contact WHERE name LIKE '%' || :query || '%' ORDER BY name ASC")
+    LiveData<List<Contact>> getSimpleContactsByName(String query);
+
+    @Query("SELECT id, name, phone, height FROM Contact WHERE clearPhone LIKE '%' || :query || '%' ORDER BY name ASC")
+    LiveData<List<Contact>> getSimpleContactsByPhone(String query);
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insert(List<Contact> contacts);
 
@@ -32,5 +38,8 @@ public interface ContactDao {
 
     @Delete
     void delete(Contact contact);
+
+    @Query("DELETE FROM Contact")
+    void deleteAll();
 
 }

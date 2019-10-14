@@ -23,4 +23,18 @@ public class ContactViewModel extends ViewModel {
     public LiveData<List<Contact>> getContactsFromServer() {
         return data.getContacts();
     }
+
+    public void insertContactList(List<Contact> contacts)
+    {
+        database.insertContactList(contacts);
+    }
+
+    public LiveData<List<Contact>> getContacts() {
+        return database.getContacts();
+    }
+
+    public LiveData<Contact> getContactById(String id)
+    {
+        return database.getContactById(id);
+    }
 }

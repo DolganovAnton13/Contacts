@@ -23,8 +23,10 @@ import com.antondolganov.contacts.adapter.ContactAdapter;
 import com.antondolganov.contacts.callback.ContactClickListener;
 import com.antondolganov.contacts.data.model.Contact;
 import com.antondolganov.contacts.databinding.FragmentListContactsBinding;
+import com.antondolganov.contacts.network.NetworkState;
 import com.antondolganov.contacts.view.MainActivity;
 import com.antondolganov.contacts.viewmodel.ContactViewModel;
+import com.google.android.material.snackbar.Snackbar;
 
 
 /**
@@ -47,6 +49,12 @@ public class FragmentListContacts extends Fragment implements ContactClickListen
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         model = ViewModelProviders.of(getActivity()).get(ContactViewModel.class);
         setRecyclerView();
+        NetworkState networkState = new NetworkState(getActivity());
+        if (networkState.isOnline())
+            getContactsFromServer();
+        else
+            Snackbar.make(binding.contactList, getResources().getString(R.string.no_internet_connection), Snackbar.LENGTH_LONG).show();
+
         loadContactList();
 
     }
@@ -54,17 +62,16 @@ public class FragmentListContacts extends Fragment implements ContactClickListen
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-        ((MainActivity)getActivity()).setToolbarWithButtonHome(binding.toolbarMain,"Главная");
+        ((MainActivity) getActivity()).setToolbarWithButtonHome(binding.toolbarMain, "Главная");
     }
 
     @Override
     public void onDestroyView() {
-        ((MainActivity)getActivity()).setToolbarWithButtonHome(null,"");
+        ((MainActivity) getActivity()).setToolbarWithButtonHome(null, "");
         super.onDestroyView();
     }
 
-    private void setRecyclerView()
-    {
+    private void setRecyclerView() {
         contactAdapter = new ContactAdapter();
         contactAdapter.setContactClickListener(this);
 
@@ -78,12 +85,21 @@ public class FragmentListContacts extends Fragment implements ContactClickListen
 
     @Override
     public void onContactClick(Contact simpleContact) {
-
+        FragmentProfile fragmentProfile = new FragmentProfile();
+        Bundle bundle = new Bundle();
+        bundle.putString("id", simpleContact.getId());
+        fragmentProfile.setArguments(bundle);
+        ((MainActivity) getActivity()).replaceFragment(fragmentProfile);
     }
 
-    private void loadContactList()
-    {
-        model.getContactsFromServer().observe(getViewLifecycleOwner(),contacts -> {
+    private void getContactsFromServer() {
+        model.getContactsFromServer().observe(getViewLifecycleOwner(), contacts -> {
+            model.insertContactList(contacts);
+        });
+    }
+
+    private void loadContactList() {
+        model.getContacts().observe(getViewLifecycleOwner(), contacts -> {
             contactAdapter.setContacts(contacts);
             binding.loading.setVisibility(View.INVISIBLE);
         });
