@@ -43,7 +43,6 @@
             android:layout_marginTop="16dp"
             android:layout_marginLeft="16dp"
             android:layout_marginRight="16dp"
-            android:text="@{contact.temperamentName}"
             android:textColor="@color/colorGray"
             android:textSize="14sp"
             tools:text="Melancholic"/>
