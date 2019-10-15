@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.antondolganov.contacts.App;
+import com.antondolganov.contacts.callback.SnackbarCallback;
 import com.antondolganov.contacts.data.model.Contact;
 import com.antondolganov.contacts.repository.DataRepository;
 import com.antondolganov.contacts.repository.DatabaseRepository;
@@ -20,8 +21,8 @@ public class ContactViewModel extends ViewModel {
         database = App.getComponent().getDatabaseRepository();
     }
 
-    public LiveData<List<Contact>> getContactsFromServer() {
-        return data.getContacts();
+    public LiveData<List<Contact>> getContactsFromServer(SnackbarCallback callback) {
+        return data.getContacts(callback);
     }
 
     public void insertContactList(List<Contact> contacts)
@@ -36,5 +37,14 @@ public class ContactViewModel extends ViewModel {
     public LiveData<Contact> getContactById(String id)
     {
         return database.getContactById(id);
+    }
+
+    public void deleteAllContacts()
+    {
+        database.deleteAllContacts();
+    }
+
+    public boolean isDataUpdateInProgress() {
+        return data.isUpdateInProgress();
     }
 }

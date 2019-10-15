@@ -6,6 +6,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.antondolganov.contacts.api.Api;
+import com.antondolganov.contacts.callback.SnackbarCallback;
 import com.antondolganov.contacts.data.model.Contact;
 
 import java.util.List;
@@ -19,6 +20,7 @@ public class DataRepository {
     private Api api;
 
     private MutableLiveData<List<Contact>> result;
+    private boolean isUpdateInProgress;
 
     public DataRepository(Api api) {
         this.api = api;
@@ -26,7 +28,8 @@ public class DataRepository {
     }
 
     @SuppressLint("CheckResult")
-    public LiveData<List<Contact>> getContacts() {
+    public LiveData<List<Contact>> getContacts(SnackbarCallback callback) {
+        isUpdateInProgress = true;
         Observable.merge(api.getSourceOne(), api.getSourceTwo(), api.getSourceThree())
                 .subscribeOn(Schedulers.io())
                 .flatMap(Observable::fromIterable)
@@ -35,11 +38,17 @@ public class DataRepository {
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(contacts -> {
                     result.setValue(contacts);
+                    isUpdateInProgress = false;
+                    callback.SnackbarShow("Загружено");
                 }, throwable -> {
-                    throwable.printStackTrace();
+                    callback.SnackbarShow("Ошибка загрузки");
+                    isUpdateInProgress = false;
                 });
 
         return result;
     }
 
+    public boolean isUpdateInProgress() {
+        return isUpdateInProgress;
+    }
 }

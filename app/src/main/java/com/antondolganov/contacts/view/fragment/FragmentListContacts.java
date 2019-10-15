@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import android.view.LayoutInflater;
 import android.view.View;
@@ -21,6 +22,7 @@ import android.widget.Toast;
 import com.antondolganov.contacts.R;
 import com.antondolganov.contacts.adapter.ContactAdapter;
 import com.antondolganov.contacts.callback.ContactClickListener;
+import com.antondolganov.contacts.callback.SnackbarCallback;
 import com.antondolganov.contacts.data.model.Contact;
 import com.antondolganov.contacts.databinding.FragmentListContactsBinding;
 import com.antondolganov.contacts.network.NetworkState;
@@ -32,7 +34,7 @@ import com.google.android.material.snackbar.Snackbar;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class FragmentListContacts extends Fragment implements ContactClickListener {
+public class FragmentListContacts extends Fragment implements ContactClickListener, SwipeRefreshLayout.OnRefreshListener, SnackbarCallback {
 
     private ContactViewModel model;
     private FragmentListContactsBinding binding;
@@ -48,15 +50,9 @@ public class FragmentListContacts extends Fragment implements ContactClickListen
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         model = ViewModelProviders.of(getActivity()).get(ContactViewModel.class);
-        setRecyclerView();
-        NetworkState networkState = new NetworkState(getActivity());
-        if (networkState.isOnline())
-            getContactsFromServer();
-        else
-            Snackbar.make(binding.contactList, getResources().getString(R.string.no_internet_connection), Snackbar.LENGTH_LONG).show();
-
+        setUI();
+        getContactsFromServer();
         loadContactList();
-
     }
 
     @Override
@@ -71,7 +67,7 @@ public class FragmentListContacts extends Fragment implements ContactClickListen
         super.onDestroyView();
     }
 
-    private void setRecyclerView() {
+    private void setUI() {
         contactAdapter = new ContactAdapter();
         contactAdapter.setContactClickListener(this);
 
@@ -81,6 +77,8 @@ public class FragmentListContacts extends Fragment implements ContactClickListen
         contactList.setAdapter(contactAdapter);
         contactList.setHasFixedSize(true);
         contactList.setItemAnimator(new DefaultItemAnimator());
+
+        binding.swipeRefreshLayout.setOnRefreshListener(this);
     }
 
     @Override
@@ -93,15 +91,59 @@ public class FragmentListContacts extends Fragment implements ContactClickListen
     }
 
     private void getContactsFromServer() {
-        model.getContactsFromServer().observe(getViewLifecycleOwner(), contacts -> {
-            model.insertContactList(contacts);
-        });
+        NetworkState networkState = new NetworkState(getActivity());
+        if (networkState.isOnline()) {
+
+                model.getContactsFromServer(this).observe(getViewLifecycleOwner(), contacts -> {
+                    model.insertContactList(contacts);
+                });
+
+        } else {
+            Snackbar.make(binding.contactList, getResources().getString(R.string.no_internet_connection), Snackbar.LENGTH_LONG).show();
+            loadContactList();
+            showLoading(false);
+            binding.swipeRefreshLayout.setRefreshing(false);
+        }
     }
 
     private void loadContactList() {
+        showLoading(true);
         model.getContacts().observe(getViewLifecycleOwner(), contacts -> {
             contactAdapter.setContacts(contacts);
-            binding.loading.setVisibility(View.INVISIBLE);
+
+            if (contacts.size() > 0) {
+                binding.swipeRefreshLayout.setRefreshing(false);
+                showLoading(false);
+            }
+            Toast.makeText(getActivity(), String.valueOf(contactAdapter.getItemCount()), Toast.LENGTH_SHORT).show();
         });
+    }
+
+    private void showLoading(boolean isShow) {
+        binding.loading.setVisibility(isShow ? View.VISIBLE : View.INVISIBLE);
+    }
+
+    @Override
+    public void onRefresh() {
+        NetworkState networkState = new NetworkState(getActivity());
+       if (networkState.isOnline()) {
+            if (!model.isDataUpdateInProgress()) {
+                model.deleteAllContacts();
+                binding.swipeRefreshLayout.setRefreshing(true);
+                getContactsFromServer();
+            }
+            else
+                binding.swipeRefreshLayout.setRefreshing(false);
+        } else {
+            Snackbar.make(binding.contactList, getResources().getString(R.string.no_internet_connection), Snackbar.LENGTH_LONG).show();
+            loadContactList();
+            showLoading(false);
+            binding.swipeRefreshLayout.setRefreshing(false);
+        }
+    }
+
+    @Override
+    public void SnackbarShow(String text) {
+        Snackbar.make(binding.contactList, text, Snackbar.LENGTH_LONG).show();
     }
 }

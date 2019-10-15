@@ -31,8 +31,17 @@ public class DatabaseRepository {
         Completable.fromAction(new Action() {
             @Override
             public void run() throws Exception {
-                contactDao.deleteAll();
                 contactDao.insert(contacts);
+            }
+        }).subscribeOn(Schedulers.io())
+                .subscribe();
+    }
+
+    public void deleteAllContacts() {
+        Completable.fromAction(new Action() {
+            @Override
+            public void run() throws Exception {
+                contactDao.deleteAll();
             }
         }).subscribeOn(Schedulers.io())
                 .subscribe();

@@ -16,9 +16,6 @@ public class App extends Application {
     public void onCreate() {
         super.onCreate();
 
-        // Обработка ошибок в RxJava
-        RxJavaPlugins.setErrorHandler(throwable -> {});
-
         // Подключаем Dagger
         component = DaggerAppComponent.builder()
                 .contextModule(new ContextModule(getApplicationContext()))
