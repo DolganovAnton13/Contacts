@@ -27,6 +27,14 @@ public class DatabaseRepository {
         return contactDao.getContactById(id);
     }
 
+    public LiveData<List<Contact>> getContactsByName(String query) {
+        return contactDao.getSimpleContactsByName(query);
+    }
+
+    public LiveData<List<Contact>> getContactsByPhone(String query) {
+        return contactDao.getSimpleContactsByPhone(query);
+    }
+
     public void insertContactList(List<Contact> contacts) {
         Completable.fromAction(new Action() {
             @Override

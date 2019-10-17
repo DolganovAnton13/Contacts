@@ -30,7 +30,8 @@ public class DataRepository {
     @SuppressLint("CheckResult")
     public LiveData<List<Contact>> getContacts(SnackbarCallback callback) {
         isUpdateInProgress = true;
-        Observable.merge(api.getSourceOne(), api.getSourceTwo(), api.getSourceThree())
+        
+        Observable.merge(api.getSourceOne(), api.getSourceTwo()/*, api.getSourceThree()*/)
                 .subscribeOn(Schedulers.io())
                 .flatMap(Observable::fromIterable)
                 .doOnNext(Contact::createClearPhone) // Добавление чистого номера (только цифры)

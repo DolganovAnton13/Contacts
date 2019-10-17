@@ -7,6 +7,9 @@ import androidx.core.view.GravityCompat;
 import androidx.databinding.DataBindingUtil;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.navigation.NavController;
+import androidx.navigation.Navigation;
+import androidx.navigation.fragment.NavHostFragment;
 
 import android.os.Bundle;
 import android.view.Gravity;
@@ -18,20 +21,14 @@ import com.antondolganov.contacts.view.fragment.FragmentListContacts;
 
 public class MainActivity extends AppCompatActivity {
 
-    private ActivityMainBinding binding;
+    private NavController navController;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        binding = DataBindingUtil.setContentView(this, R.layout.activity_main);
-
-        if (savedInstanceState == null) {
-            FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
-            fragmentTransaction.replace(binding.hostFragment.getId(), new FragmentListContacts());
-            fragmentTransaction.commit();
-        }
+        navController = Navigation.findNavController(this, R.id.nav_host_fragment);
     }
 
     public void setToolbarWithButtonHome(Toolbar toolbar, String title) {
@@ -43,27 +40,11 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public void replaceFragment(Fragment fragment) {
-        FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
-        fragmentTransaction.replace(binding.hostFragment.getId(), fragment);
-        fragmentTransaction.addToBackStack(null);
-        fragmentTransaction.commit();
-    }
-
-    @Override
-    public void onBackPressed() {
-        int count = getSupportFragmentManager().getBackStackEntryCount();
-        if (count == 0)
-            super.onBackPressed();
-        else
-            getSupportFragmentManager().popBackStack();
-    }
-
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         switch (item.getItemId()) {
             case android.R.id.home:
-                onBackPressed();
+                navController.popBackStack();
                 return true;
 
             default:

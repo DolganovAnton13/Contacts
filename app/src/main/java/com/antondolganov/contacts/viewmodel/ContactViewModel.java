@@ -1,6 +1,9 @@
 package com.antondolganov.contacts.viewmodel;
 
+import android.text.TextUtils;
+
 import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 import com.antondolganov.contacts.App;
@@ -15,6 +18,7 @@ public class ContactViewModel extends ViewModel {
 
     private DataRepository data;
     private DatabaseRepository database;
+    private String searchQuery;
 
     public ContactViewModel() {
         data = App.getComponent().getDataRepository();
@@ -25,8 +29,23 @@ public class ContactViewModel extends ViewModel {
         return data.getContacts(callback);
     }
 
-    public void insertContactList(List<Contact> contacts)
-    {
+    public LiveData<List<Contact>> getSearchQuery() {
+        if (TextUtils.isEmpty(searchQuery)) {
+            return database.getContacts();
+        } else {
+            if (TextUtils.isDigitsOnly(searchQuery)) {
+                return database.getContactsByPhone(searchQuery);
+            } else {
+                return database.getContactsByName(searchQuery);
+            }
+        }
+    }
+
+    public void setSearchQuery(String searchQuery) {
+        this.searchQuery = searchQuery;
+    }
+
+    public void insertContactList(List<Contact> contacts) {
         database.insertContactList(contacts);
     }
 
@@ -34,13 +53,11 @@ public class ContactViewModel extends ViewModel {
         return database.getContacts();
     }
 
-    public LiveData<Contact> getContactById(String id)
-    {
+    public LiveData<Contact> getContactById(String id) {
         return database.getContactById(id);
     }
 
-    public void deleteAllContacts()
-    {
+    public void deleteAllContacts() {
         database.deleteAllContacts();
     }
 
