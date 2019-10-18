@@ -1,10 +1,11 @@
 package com.antondolganov.contacts.view.fragment;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -17,7 +18,6 @@ import androidx.paging.PagedList;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.antondolganov.contacts.R;
@@ -34,9 +34,7 @@ import com.jakewharton.rxbinding3.widget.RxSearchView;
 
 import java.util.concurrent.TimeUnit;
 
-import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
-import io.reactivex.disposables.Disposable;
 
 
 /**
@@ -47,7 +45,8 @@ public class FragmentListContacts extends Fragment implements ContactClickListen
     private ContactViewModel model;
     private FragmentListContactsBinding binding;
     private NavController navController;
-    private ContactsAdapter contactAdapter;
+    private ContactsAdapter contactsAdapter;
+    private NetworkState networkState;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -61,7 +60,6 @@ public class FragmentListContacts extends Fragment implements ContactClickListen
         model = ViewModelProviders.of(getActivity()).get(ContactViewModel.class);
         setUI();
         getContactsFromServer();
-        loadContactList();
     }
 
     @Override
@@ -79,67 +77,51 @@ public class FragmentListContacts extends Fragment implements ContactClickListen
     private void setUI() {
 
         navController = Navigation.findNavController(getActivity(), R.id.nav_host_fragment);
+        networkState = new NetworkState(getActivity());
 
-        contactAdapter = new ContactsAdapter();
-        contactAdapter.setContactClickListener(this);
+        contactsAdapter = new ContactsAdapter();
+        contactsAdapter.setContactClickListener(this);
 
-        RecyclerView contactList = binding.contactList;
-        contactList.setLayoutManager(new LinearLayoutManager(getActivity()));
-        contactList.addItemDecoration(new DividerItemDecoration(getActivity(), DividerItemDecoration.VERTICAL));
-        contactList.setAdapter(contactAdapter);
-        contactList.setHasFixedSize(true);
-        contactList.setItemAnimator(new DefaultItemAnimator());
+        binding.contactList.setLayoutManager(new LinearLayoutManager(getActivity()));
+        binding.contactList.addItemDecoration(new DividerItemDecoration(getActivity(), DividerItemDecoration.VERTICAL));
+        binding.contactList.setAdapter(contactsAdapter);
+        binding.contactList.setHasFixedSize(true);
+        binding.contactList.setItemAnimator(new DefaultItemAnimator());
 
         binding.swipeRefreshLayout.setOnRefreshListener(this);
 
         getResultsQuerySearch();
     }
 
+    @SuppressLint("CheckResult")
     private void getResultsQuerySearch() {
-        if(model.getSearchQuery()!=null)
-        {
-            binding.searchView.setQuery(model.getSearchQuery(),true);
+        if (model.getSearchQuery() != null) {
+            binding.searchView.setQuery(model.getSearchQuery(), true);
         }
 
         RxSearchView.queryTextChanges(binding.searchView)
                 .debounce(800, TimeUnit.MILLISECONDS)
                 .map(CharSequence::toString)
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<String>() {
-                    @Override
-                    public void onSubscribe(Disposable d) {
-
+                .subscribe(query -> {
+                    if (!query.isEmpty()) {
+                        model.setSearchQuery(query);
+                        showResultsSearchQuery();
+                    } else {
+                        model.setSearchQuery(null);
+                        loadContactList();
                     }
-
-                    @Override
-                    public void onNext(String s) {
-                        if (!s.isEmpty()) {
-                            model.setSearchQuery(s);
-                            ShowResultsSearchQuery();
-                        } else {
-                            model.setSearchQuery(null);
-                            loadContactList();
-                        }
-                    }
-
-                    @Override
-                    public void onError(Throwable e) {
-
-                    }
-
-                    @Override
-                    public void onComplete() {
-                    }
+                }, throwable -> {
+                    Snackbar.make(binding.contactList, "Ошибка: " + throwable.getMessage(), Snackbar.LENGTH_LONG).show();
                 });
-
 
     }
 
-    private void ShowResultsSearchQuery() {
+    private void showResultsSearchQuery() {
         model.getResultsSearchQuery().observe(this, new androidx.lifecycle.Observer<PagedList<Contact>>() {
             @Override
             public void onChanged(PagedList<Contact> contacts) {
-                contactAdapter.submitList(contacts);
+                contactsAdapter.submitList(contacts);
             }
         });
     }
@@ -152,18 +134,12 @@ public class FragmentListContacts extends Fragment implements ContactClickListen
     }
 
     private void getContactsFromServer() {
-        NetworkState networkState = new NetworkState(getActivity());
         if (networkState.isOnline()) {
-
             model.getContactsFromServer(this).observe(getViewLifecycleOwner(), contacts -> {
                 model.insertContactList(contacts);
             });
-
         } else {
-            Snackbar.make(binding.contactList, getResources().getString(R.string.no_internet_connection), Snackbar.LENGTH_LONG).show();
-            loadContactList();
-            showLoading(false);
-            binding.swipeRefreshLayout.setRefreshing(false);
+            actionIfNoInternet();
         }
     }
 
@@ -173,8 +149,7 @@ public class FragmentListContacts extends Fragment implements ContactClickListen
         model.getContactsPagedList().observe(this, new androidx.lifecycle.Observer<PagedList<Contact>>() {
             @Override
             public void onChanged(PagedList<Contact> contacts) {
-                contactAdapter.submitList(contacts);
-
+                contactsAdapter.submitList(contacts);
                 if (contacts.size() > 0) {
                     binding.swipeRefreshLayout.setRefreshing(false);
                     showLoading(false);
@@ -189,10 +164,10 @@ public class FragmentListContacts extends Fragment implements ContactClickListen
 
     @Override
     public void onRefresh() {
-        NetworkState networkState = new NetworkState(getActivity());
+
         if (networkState.isOnline()) {
             if (!model.isDataUpdateInProgress()) {
-                binding.searchView.setQuery(null,true);
+                binding.searchView.setQuery(null, true);
                 model.setSearchQuery(null);
                 model.deleteAllContacts();
                 binding.swipeRefreshLayout.setRefreshing(true);
@@ -200,11 +175,15 @@ public class FragmentListContacts extends Fragment implements ContactClickListen
             } else
                 binding.swipeRefreshLayout.setRefreshing(false);
         } else {
-            Snackbar.make(binding.contactList, getResources().getString(R.string.no_internet_connection), Snackbar.LENGTH_LONG).show();
-            loadContactList();
-            showLoading(false);
-            binding.swipeRefreshLayout.setRefreshing(false);
+            actionIfNoInternet();
         }
+    }
+
+    private void actionIfNoInternet() {
+        Snackbar.make(binding.contactList, getResources().getString(R.string.no_internet_connection), Snackbar.LENGTH_LONG).show();
+        loadContactList();
+        showLoading(false);
+        binding.swipeRefreshLayout.setRefreshing(false);
     }
 
     @Override

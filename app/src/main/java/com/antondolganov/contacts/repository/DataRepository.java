@@ -42,7 +42,7 @@ public class DataRepository {
                     isUpdateInProgress = false;
                     callback.SnackbarShow("Загружено");
                 }, throwable -> {
-                    callback.SnackbarShow("Ошибка загрузки");
+                    callback.SnackbarShow("Ошибка загрузки: " + throwable.getMessage());
                     isUpdateInProgress = false;
                 });
 

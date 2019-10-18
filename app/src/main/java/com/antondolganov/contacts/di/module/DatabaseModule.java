@@ -6,7 +6,6 @@ import androidx.room.Room;
 
 import com.antondolganov.contacts.db.AppDatabase;
 import com.antondolganov.contacts.db.dao.ContactDao;
-import com.antondolganov.contacts.di.module.ContextModule;
 
 import javax.inject.Singleton;
 

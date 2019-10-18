@@ -1,7 +1,6 @@
 package com.antondolganov.contacts.di.module;
 
 import android.content.Context;
-import android.content.res.Resources;
 
 import javax.inject.Singleton;
 

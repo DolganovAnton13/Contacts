@@ -3,9 +3,7 @@ package com.antondolganov.contacts.viewmodel;
 import android.text.TextUtils;
 
 import androidx.lifecycle.LiveData;
-import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
-
 import androidx.paging.LivePagedListBuilder;
 import androidx.paging.PagedList;
 
@@ -16,7 +14,6 @@ import com.antondolganov.contacts.repository.DataRepository;
 import com.antondolganov.contacts.repository.DatabaseRepository;
 
 import java.util.List;
-import java.util.concurrent.Executors;
 
 public class ContactViewModel extends ViewModel {
 

@@ -14,7 +14,6 @@ import com.antondolganov.contacts.callback.ContactClickListener;
 import com.antondolganov.contacts.data.model.Contact;
 import com.antondolganov.contacts.databinding.ItemContactBinding;
 
-import java.util.List;
 import java.util.Objects;
 
 public class ContactsAdapter extends PagedListAdapter<Contact, ContactsAdapter.ContactHolder> {

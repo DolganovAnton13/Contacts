@@ -1,20 +1,10 @@
 package com.antondolganov.contacts.di.module;
 
-import android.content.Context;
-import android.util.Log;
-
-import com.antondolganov.contacts.BuildConfig;
 import com.antondolganov.contacts.api.Api;
-import com.antondolganov.contacts.di.module.ContextModule;
-
-import java.io.File;
 
 import dagger.Module;
 import dagger.Provides;
 import io.reactivex.schedulers.Schedulers;
-import okhttp3.Cache;
-import okhttp3.OkHttpClient;
-import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
