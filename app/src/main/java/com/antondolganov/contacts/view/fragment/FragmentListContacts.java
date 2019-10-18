@@ -13,6 +13,7 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProviders;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
+import androidx.paging.PagedList;
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.DividerItemDecoration;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -20,7 +21,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.antondolganov.contacts.R;
-import com.antondolganov.contacts.adapter.ContactAdapter;
+import com.antondolganov.contacts.adapter.ContactsAdapter;
 import com.antondolganov.contacts.callback.ContactClickListener;
 import com.antondolganov.contacts.callback.SnackbarCallback;
 import com.antondolganov.contacts.data.model.Contact;
@@ -45,8 +46,8 @@ public class FragmentListContacts extends Fragment implements ContactClickListen
 
     private ContactViewModel model;
     private FragmentListContactsBinding binding;
-    private ContactAdapter contactAdapter;
     private NavController navController;
+    private ContactsAdapter contactAdapter;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -78,7 +79,8 @@ public class FragmentListContacts extends Fragment implements ContactClickListen
     private void setUI() {
 
         navController = Navigation.findNavController(getActivity(), R.id.nav_host_fragment);
-        contactAdapter = new ContactAdapter();
+
+        contactAdapter = new ContactsAdapter();
         contactAdapter.setContactClickListener(this);
 
         RecyclerView contactList = binding.contactList;
@@ -90,10 +92,15 @@ public class FragmentListContacts extends Fragment implements ContactClickListen
 
         binding.swipeRefreshLayout.setOnRefreshListener(this);
 
-        getQuerySearch();
+        getResultsQuerySearch();
     }
 
-    private void getQuerySearch() {
+    private void getResultsQuerySearch() {
+        if(model.getSearchQuery()!=null)
+        {
+            binding.searchView.setQuery(model.getSearchQuery(),true);
+        }
+
         RxSearchView.queryTextChanges(binding.searchView)
                 .debounce(800, TimeUnit.MILLISECONDS)
                 .map(CharSequence::toString)
@@ -108,7 +115,10 @@ public class FragmentListContacts extends Fragment implements ContactClickListen
                     public void onNext(String s) {
                         if (!s.isEmpty()) {
                             model.setSearchQuery(s);
-                            ShowSearchQuery();
+                            ShowResultsSearchQuery();
+                        } else {
+                            model.setSearchQuery(null);
+                            loadContactList();
                         }
                     }
 
@@ -125,10 +135,12 @@ public class FragmentListContacts extends Fragment implements ContactClickListen
 
     }
 
-    private void ShowSearchQuery() {
-        model.getSearchQuery().observe(getViewLifecycleOwner(), searchQuery -> {
-            contactAdapter.setContacts(searchQuery);
-            contactAdapter.notifyDataSetChanged();
+    private void ShowResultsSearchQuery() {
+        model.getResultsSearchQuery().observe(this, new androidx.lifecycle.Observer<PagedList<Contact>>() {
+            @Override
+            public void onChanged(PagedList<Contact> contacts) {
+                contactAdapter.submitList(contacts);
+            }
         });
     }
 
@@ -157,14 +169,17 @@ public class FragmentListContacts extends Fragment implements ContactClickListen
 
     private void loadContactList() {
         showLoading(true);
-        model.getContacts().observe(getViewLifecycleOwner(), contacts -> {
-            contactAdapter.setContacts(contacts);
 
-            if (contacts.size() > 0) {
-                binding.swipeRefreshLayout.setRefreshing(false);
-                showLoading(false);
+        model.getContactsPagedList().observe(this, new androidx.lifecycle.Observer<PagedList<Contact>>() {
+            @Override
+            public void onChanged(PagedList<Contact> contacts) {
+                contactAdapter.submitList(contacts);
+
+                if (contacts.size() > 0) {
+                    binding.swipeRefreshLayout.setRefreshing(false);
+                    showLoading(false);
+                }
             }
-            Toast.makeText(getActivity(), String.valueOf(contactAdapter.getItemCount()), Toast.LENGTH_SHORT).show();
         });
     }
 
@@ -177,6 +192,8 @@ public class FragmentListContacts extends Fragment implements ContactClickListen
         NetworkState networkState = new NetworkState(getActivity());
         if (networkState.isOnline()) {
             if (!model.isDataUpdateInProgress()) {
+                binding.searchView.setQuery(null,true);
+                model.setSearchQuery(null);
                 model.deleteAllContacts();
                 binding.swipeRefreshLayout.setRefreshing(true);
                 getContactsFromServer();

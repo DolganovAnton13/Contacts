@@ -22,10 +22,11 @@
                 android:layout_height="wrap_content"
                 android:layout_margin="6dp"
                 android:background="@android:color/white"
-                android:focusable="false"
                 android:paddingStart="-10dp"
-                app:defaultQueryHint="@string/search"
-                app:iconifiedByDefault="false" />
+                android:queryHint="@string/search"
+                android:iconifiedByDefault = "false"
+                android:focusable="false"
+                />
         </androidx.appcompat.widget.Toolbar>
 
         <FrameLayout

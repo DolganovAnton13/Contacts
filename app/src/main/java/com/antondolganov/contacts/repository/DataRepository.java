@@ -30,11 +30,11 @@ public class DataRepository {
     @SuppressLint("CheckResult")
     public LiveData<List<Contact>> getContacts(SnackbarCallback callback) {
         isUpdateInProgress = true;
-        
-        Observable.merge(api.getSourceOne(), api.getSourceTwo()/*, api.getSourceThree()*/)
+
+        Observable.merge(api.sourceContactsOne(), api.sourceContactsTwo(), api.sourceContactsThree())
                 .subscribeOn(Schedulers.io())
-                .flatMap(Observable::fromIterable)
-                .doOnNext(Contact::createClearPhone) // Добавление чистого номера (только цифры)
+                .flatMap(Observable::fromIterable)  //разбиваем список на множество отдельных контактов
+                .doOnNext(Contact::createClearPhone) // Добавляем чистый номер для каждого контакта (для поска по номеру)
                 .toList()
                 .observeOn(AndroidSchedulers.mainThread())
                 .subscribe(contacts -> {

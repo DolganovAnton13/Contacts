@@ -9,12 +9,12 @@ import retrofit2.http.GET;
 public interface Api {
 
     @GET("generated-01.json")
-    Observable<List<Contact>> getSourceOne();
+    Observable<List<Contact>> sourceContactsOne();
 
     @GET("generated-02.json")
-    Observable<List<Contact>> getSourceTwo();
+    Observable<List<Contact>> sourceContactsTwo();
 
     @GET("generated-03.json")
-    Observable<List<Contact>> getSourceThree();
+    Observable<List<Contact>> sourceContactsThree();
 
 }

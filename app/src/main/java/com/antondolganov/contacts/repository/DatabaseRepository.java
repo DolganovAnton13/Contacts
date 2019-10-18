@@ -1,6 +1,7 @@
 package com.antondolganov.contacts.repository;
 
 import androidx.lifecycle.LiveData;
+import androidx.paging.DataSource;
 
 import com.antondolganov.contacts.data.model.Contact;
 import com.antondolganov.contacts.db.dao.ContactDao;
@@ -19,7 +20,7 @@ public class DatabaseRepository {
         this.contactDao = contactDao;
     }
 
-    public LiveData<List<Contact>> getContacts() {
+    public DataSource.Factory<Integer, Contact> getContacts() {
         return contactDao.getAllContacts();
     }
 
@@ -27,12 +28,12 @@ public class DatabaseRepository {
         return contactDao.getContactById(id);
     }
 
-    public LiveData<List<Contact>> getContactsByName(String query) {
-        return contactDao.getSimpleContactsByName(query);
+    public DataSource.Factory<Integer, Contact> getContactsByName(String query) {
+        return contactDao.getContactsByName(query);
     }
 
-    public LiveData<List<Contact>> getContactsByPhone(String query) {
-        return contactDao.getSimpleContactsByPhone(query);
+    public DataSource.Factory<Integer, Contact> getContactsByPhone(String query) {
+        return contactDao.getContactsByPhone(query);
     }
 
     public void insertContactList(List<Contact> contacts) {
