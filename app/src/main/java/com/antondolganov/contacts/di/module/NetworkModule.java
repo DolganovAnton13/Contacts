@@ -35,6 +35,5 @@ public class NetworkModule {
     public RxJava2CallAdapterFactory rxJava2CallAdapterFactory() {
         return RxJava2CallAdapterFactory.createWithScheduler(Schedulers.io());
     }
-
 }
 

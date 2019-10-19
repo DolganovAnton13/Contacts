@@ -59,7 +59,6 @@ public class FragmentListContacts extends Fragment implements ContactClickListen
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         model = ViewModelProviders.of(getActivity()).get(ContactViewModel.class);
         setUI();
-        getContactsFromServer();
     }
 
     @Override
@@ -97,7 +96,8 @@ public class FragmentListContacts extends Fragment implements ContactClickListen
     private void getResultsQuerySearch() {
         if (model.getSearchQuery() != null) {
             binding.searchView.setQuery(model.getSearchQuery(), true);
-        }
+        } else
+            getContactsFromServer();
 
         RxSearchView.queryTextChanges(binding.searchView)
                 .debounce(800, TimeUnit.MILLISECONDS)
@@ -113,15 +113,18 @@ public class FragmentListContacts extends Fragment implements ContactClickListen
                     }
                 }, throwable -> {
                     Snackbar.make(binding.contactList, "Ошибка: " + throwable.getMessage(), Snackbar.LENGTH_LONG).show();
+                    showLoading(false);
                 });
 
     }
 
     private void showResultsSearchQuery() {
+        showLoading(true);
         model.getResultsSearchQuery().observe(this, new androidx.lifecycle.Observer<PagedList<Contact>>() {
             @Override
             public void onChanged(PagedList<Contact> contacts) {
                 contactsAdapter.submitList(contacts);
+                showLoading(false);
             }
         });
     }
@@ -167,7 +170,7 @@ public class FragmentListContacts extends Fragment implements ContactClickListen
 
         if (networkState.isOnline()) {
             if (!model.isDataUpdateInProgress()) {
-                binding.searchView.setQuery(null, true);
+                binding.searchView.setQuery(null, false);
                 model.setSearchQuery(null);
                 model.deleteAllContacts();
                 binding.swipeRefreshLayout.setRefreshing(true);
