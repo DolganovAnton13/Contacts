@@ -114,10 +114,13 @@ public class Contact {
 
     public String getFormattedEducationPeriod() {
         DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy", Locale.getDefault());
-        return dateFormat.format(educationPeriod.getStart()) + " - " + dateFormat.format(educationPeriod.getEnd());
+        if (educationPeriod.getStart().getTime() > educationPeriod.getEnd().getTime())
+            return dateFormat.format(educationPeriod.getEnd()) + " - " + dateFormat.format(educationPeriod.getStart());
+        else
+            return dateFormat.format(educationPeriod.getStart()) + " - " + dateFormat.format(educationPeriod.getEnd());
     }
 
     public void createClearPhone() {
-        this.clearPhone = phone.replaceAll("\\D+","");
+        this.clearPhone = phone.replaceAll("\\D+", "");
     }
 }
